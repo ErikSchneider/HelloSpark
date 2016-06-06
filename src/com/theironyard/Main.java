@@ -20,10 +20,25 @@ public class Main {
                 "/",
                 (request, response) -> {
                     HashMap map = new HashMap();
-                    map.put("name", "Erik");
-                    return new ModelAndView(map, "home.html");
+                    if (user == null) {
+                        return new ModelAndView(map, "login.html");
+                    }
+                    else {
+
+                        map.put("name", user.name);
+                        return new ModelAndView(map, "home.html");
+                    }
                 },
                 new MustacheTemplateEngine()
+        );
+        Spark.post(
+                "/login",
+                (request, response) -> {
+                    String username = request.queryParams("username");
+                    user = new User(username);
+                    response.redirect("/");
+                    return "";
+                }
         );
     }
 }
