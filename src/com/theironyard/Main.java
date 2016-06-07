@@ -1,6 +1,7 @@
 package com.theironyard;
 
 import spark.ModelAndView;
+import spark.Session;
 import spark.Spark;
 import spark.template.mustache.MustacheTemplateEngine;
 
@@ -13,7 +14,7 @@ import java.util.HashMap;
 
 public class Main {
 
-    static User user;
+    static HashMap<String, User> users = new HashMap<>();
     static ArrayList<User> userList= new ArrayList<>();
 
     public static void main(String[] args) {
@@ -21,13 +22,16 @@ public class Main {
         Spark.get(
                 "/",
                 (request, response) -> {
+                    Session session = request.session();
+                    String username = session.attribute("username");
+
                     HashMap map = new HashMap();
-                    if (user == null) {
+                    if (username == null) {
                         return new ModelAndView(map, "login.html");
                     }
                     else {
 
-                        map.put("name", user.name);
+                        map.put("name", username);
                         map.put("users", userList);
                         return new ModelAndView(map, "home.html");
                     }
@@ -38,8 +42,16 @@ public class Main {
                 "/login",
                 (request, response) -> {
                     String username = request.queryParams("username");
-                    user = new User(username);
-                    userList.add(user);
+                    User user = users.get(username);
+                    if (user == null) {
+                        user = new User(username);
+                        users.put(username, user);
+                        userList.add(user);
+                    }
+
+                    Session session = request.session();
+                    session.attribute("username", username);
+
                     response.redirect("/");
                     return "";
                 }
@@ -47,7 +59,8 @@ public class Main {
         Spark.post(
                 "/logout",
                 (request, response) -> {
-                    user = null;
+                    Session session = request.session();
+                    session.invalidate();
                     response.redirect("/");
                     return "";
                 }
